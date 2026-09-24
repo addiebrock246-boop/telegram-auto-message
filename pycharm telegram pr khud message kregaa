@@ -1,0 +1,86 @@
+import asyncio
+from telethon import TelegramClient, errors
+
+# ===================== यहाँ अपनी जानकारी डालो =====================
+api_id = 31600342  # my.telegram.org से लिया गया API ID (नंबर)
+api_hash = '245049efb4eb7fd201b1cc01a86e4812'  # my.telegram.org से लिया गया API HASH (लंबा कोड)
+
+# जिस ग्रुप/चैनल से मेंबर्स निकालने हैं (लिंक या यूज़रनेम डालो)
+GROUP_LINK = 'https://t.me/BBBBHzskk'  # जैसे: 'https://t.me/PythonHindi'
+
+# जो मैसेज सबको भेजना है (इसमें कुछ भी बदल सकते हो)
+MESSAGE_TEXT = ("Hi, do you like watching leaked MMS porn videos💋? If yes, join this channel. (Rape videos are also available.)”👀👄"
+                "HI apko mms leak porn video dekhna psnd h💋? agr haa to iss channel se judiye (RAPE vvideos bhi availables h)👀👄 https://t.me/DARKXLLEAKS  JOIN THIS CHANNEL")
+
+
+# ====================================================================
+
+async def main():
+    # 'my_session' नाम की फाइल बनेगी जो आपको बार-बार OTP नहीं मांगेगी
+    async with TelegramClient('my_session', api_id, api_hash) as client:
+        print("🚀 बॉट स्टार्ट हो रहा है...")
+
+        # 1. ग्रुप/चैनल को सर्च करो
+        try:
+            entity = await client.get_entity(GROUP_LINK)
+            print(f"✅ ग्रुप मिल गया: {entity.title}")
+        except Exception as e:
+            print(f"❌ ग्रुप नहीं मिला: {e}")
+            return
+
+        # 2. सारे मेंबर्स की लिस्ट लाओ (जितने मिलेंगे)
+        print("📥 मेंबर्स लोड हो रहे हैं (बड़े ग्रुप में 1-2 मिनट लग सकते हैं)...")
+        try:
+            participants = await client.get_participants(entity)
+            print(f"✅ कुल {len(participants)} मेंबर्स मिले!")
+        except Exception as e:
+            print(f"❌ मेंबर्स लोड नहीं हो पाए: {e}")
+            return
+
+        success_count = 0
+        fail_count = 0
+
+        # खुद को और बॉट्स को मैसेज मत भेजो
+        me = await client.get_me()
+
+        # 3. हर एक मेंबर पर लूप चलाओ
+        for index, user in enumerate(participants, 1):
+            # 👇 यहाँ 'or user.bot' जोड़ा गया है - ये सारे बॉट्स को रोकेगा
+            if user.id == me.id or user.bot:
+                continue
+
+            # नाम पकड़ो (अगर नाम न हो तो यूज़रनेम)
+            name = user.first_name or user.username or "Unknown User"
+
+            try:
+                # 👇 मैसेज भेजो
+                await client.send_message(user, MESSAGE_TEXT)
+                print(f"✅ [{index}/{len(participants)}] {name} को मैसेज भेजा गया.")
+                success_count += 1
+
+                # 🕐 हर मैसेज के बाद 90 सेकंड (1.5 मिनट) रुको - बहुत जरूरी है!
+                await asyncio.sleep(90)
+
+            except errors.FloodWaitError as e:
+                # अगर फ्लड एरर आए (तेजी भेजना या अनुमति न होना)
+                print(f"⏳ [{index}/{len(participants)}] {name}: फ्लड एरर! {e.seconds} सेकंड रुको...")
+                fail_count += 1
+                # जितना समय Telegram बोले उतना रुको
+                await asyncio.sleep(e.seconds)
+
+            except Exception as e:
+                # बाकी सारे एरर (जैसे उसने मैसेज बंद कर रखा हो)
+                print(f"❌ [{index}/{len(participants)}] {name} को मैसेज नहीं गया (कारण: {type(e).__name__})")
+                fail_count += 1
+                # थोड़ा सा गैप ले लो ताकि अकाउंट पर लोड न पड़े
+                await asyncio.sleep(10)
+
+        # 4. अंतिम रिपोर्ट
+        print("\n" + "=" * 40)
+        print(f"📊 काम खत्म! सफल: {success_count}, असफल: {fail_count}")
+        print("=" * 40)
+
+
+# बॉट चलाओ (यह लाइन हर कोड में होनी चाहिए)
+if __name__ == "__main__":
+    asyncio.run(main())
